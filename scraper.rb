@@ -1,89 +1,76 @@
-require 'nokogiri'
-require 'open-uri'
-require 'watir-webdriver'
-require 'headless'
+require "github_api"
+require "json"
+require_relative "login"
 
-def getEmail(name='')
-  headless = Headless.new
-  headless.start
-  browser = Watir::Browser.start 'https://github.com/' + name
+# Hash to store name:email pairs and avoid unnecessary calls
+$emails = Hash.new
 
-  doc = Nokogiri::HTML(browser.html)
-
-  # Search for email node with xpath
-  doc.xpath("//*[contains(concat(' ', normalize-space(@class), ' '), ' email ')]").each do |link|
-    puts "    " + link.content
+def getEmail(github, name)
+  # Add username:email pair to hash if not already present
+  if not $emails.has_key?(name)
+    results = github.users.get user:name
+    $emails[name] = results["email"]
   end
 end
 
-def getContribs(project='')
-  headless = Headless.new
-  headless.start
-  browser = Watir::Browser.start 'https://github.com/' + project + '/graphs/contributors'
+def getForks(github, name, repo_name)
+  # Get all users who have forked name/repo_name
+  result = github.repos.forks.list user:name, repo:repo_name
 
-  doc = Nokogiri::HTML(browser.html)
-
-  # Search for username node with xpath
-  doc.xpath("//*[contains(concat(' ', normalize-space(@class), ' '), ' aname ')]").each do |link|
-    puts "  " + link.content
-    getEmail(link.content)
+  result.each do |fork|
+    getEmail(github, fork['owner']['login'])
   end
 end
 
-def getWatchers(project='')
-  headless = Headless.new
-  headless.start
-  browser = Watir::Browser.start 'https://github.com/' + project + '/watchers'
+def getStars(github, name, repo_name)
+  # Get all users who have starred name/repo_name
+  result = github.activity.starring.list user:name, repo:repo_name
 
-  doc = Nokogiri::HTML(browser.html)
-
-  # Search for username node with xpath
-  doc.xpath("//*[contains(concat(' ', normalize-space(@class), ' '), ' follow-list-name ')]/span/a").each do |link|
-    puts "  " + link.content
-    getEmail(link.content)
+  result.each do |star|
+    getEmail(github, star['login'])
   end
 end
 
-def getStars(project='')
-  headless = Headless.new
-  headless.start
-  browser = Watir::Browser.start 'https://github.com/' + project + '/stargazers'
+def getSubs(github, name, repo_name) 
+  # Get all users who are watching name/repo_name
+  result = github.activity.watching.list user:name, repo:repo_name
 
-  doc = Nokogiri::HTML(browser.html)
-
-  # Search for username node with xpath
-  doc.xpath("//*[contains(concat(' ', normalize-space(@class), ' '), ' follow-list-name ')]/span/a").each do |link|
-    puts "  " + link.content
-    getEmail(link.content)
+  result.each do |sub|
+    getEmail(github, sub['login'])
   end
 end
 
-def getProjects(name='')
-  headless = Headless.new
-  headless.start
-  browser = Watir::Browser.start 'https://github.com/' + name
+def getContribs(github, name, repo_name)
+  # Get all users who have contributed to name/repo_name
+  result = github.repos.stats.contributors user:name, repo:repo_name
 
-  doc = Nokogiri::HTML(browser.html)
-
-  # Search for repo name node with xpath
-  doc.xpath("//*[contains(concat(' ', normalize-space(@class), ' '), ' org-repo-name ')]/a").each do |link|
-    result = name + '/' + link.content.strip
-    puts result
-    getContribs(result)
-    getWatchers(result)
-    getStars(result)
+  result.each do |contrib|
+    getEmail(github, contrib['author']['login'])
   end
 end
 
+def getRepos(github, root_name)
+  # Get all repos of a given user or organization
+  result = github.repos.list user:root_name
 
-# TODO: Enable hash-map (python-esque dict or list)  to store names/emails.
-#	Avoid checking same person multiple times.
-# 	Investigate grabbing list of people who have forked the project.
-#	What do with emails when done?  Write/pipe to file?
+  result.each do |repo|
+    getForks(github, root_name, repo['name'])
+    getStars(github, root_name, repo['name'])
+    getSubs(github, root_name, repo['name'])
+    getContribs(github, root_name, repo['name'])
+  end
+end
 
-# Enables multiple groups
-#ARGV.each do |a|
-#  getProjects(a)
-#end
+# Authenticate github user
+# Allows for 5000 requests per hour
+github = Github.new login:$user, password:$pass
 
-getProjects(ARGV[0])
+getRepos(github, ARGV[0])
+
+# Print all obtained emails
+# Can be changed to other forms of output
+$emails.each_key do |key|
+  if $emails[key] and $emails[key] != ""
+    puts key + " -- " + $emails[key]
+  end
+end
