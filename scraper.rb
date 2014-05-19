@@ -53,6 +53,7 @@ def getRepos(github, root_name)
   # Get all repos of a given user or organization
   result = github.repos.list user:root_name
 
+  # Delve deeper for each repo
   result.each do |repo|
     getForks(github, root_name, repo['name'])
     getStars(github, root_name, repo['name'])
@@ -67,10 +68,29 @@ github = Github.new login:$user, password:$pass
 
 getRepos(github, ARGV[0])
 
-# Print all obtained emails
-# Can be changed to other forms of output
-$emails.each_key do |key|
-  if $emails[key] and $emails[key] != ""
-    puts key + " -- " + $emails[key]
+if ARGV.length == 1 or ARGV[1].to_i == 0
+# Print all obtained usernames and emails
+  $emails.each_key do |key|
+    if $emails[key] and $emails[key] != ""
+      puts key + " -- " + $emails[key]
+    end
+  end
+else
+  # Write all emails to a csv file
+  # Emails without an "@" symbol will error and print for manual entries
+  # For example, github.at.github.com will need to be added manually
+  output = File.open(ARGV[0] + "_emails.csv", "w")
+  comma = false
+  $emails.each_key do |key|
+    if $emails[key] and $emails[key] != "" and $emails[key].include? "@"
+      if comma
+        output.print ", " + $emails[key] 
+      else
+        comma = true
+        output.print $emails[key]
+      end
+    elsif $emails[key] and $emails[key] != "" and not $emails[key].include? "@"
+      puts "Invalid email: " + key + " -- " + $emails[key]
+    end
   end
 end
