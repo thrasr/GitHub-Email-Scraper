@@ -1,19 +1,17 @@
-This is a quick ruby script to get emails of contributors, watchers, stargazers, and forkers of a project.
+This is a quick ruby script to get emails of contributors, watchers, stargazers, and forkers of all repos for a user/organization.
 
-Developed using ruby 2.1, however should run with similar version of ruby.
+Developed using ruby 2.1, however should run successfully with similar versions of ruby.
 
 Gems required:
 
-[Nokogiri](http://nokogiri.org/)
-
-[Watir Webdriver](http://watirwebdriver.com/)
-
-[Headless](https://github.com/leonid-shevtsov/headless)
+[Github_API](http://peter-murach.github.io/github/)
 
 Usage:
 
-This script takes any number of projects as command line arguments and will iterate through them to grab all relevant emails.
+Before beginning, change USERNAME and PASSWORD in login.rb to a set of valid github credentials for authentication.  This allows for 5000 API calls per hour as opposed to the default 60.
+
+This script takes a user or organization as a command line argument and will grab all public emails for users who have interacted with repos of the given user/organization.
 
 ```ruby
-ruby scraper.rb myproject1 myproject2 myproject3 ...
+ruby scraper.rb myorganization
 ```
