@@ -1,4 +1,4 @@
-This is a quick ruby script to get public emails of contributors, watchers, stargazers, and forkers of all repos for a user/organization.
+This is a quick ruby script to get public emails of contributors, watchers, stargazers, and forkers of all repos for a user/organization.  Please use responsibly and respect those who wish to opt out of your email communications.
 
 Developed using ruby 2.1, however should run successfully with similar versions of ruby.
 
