@@ -84,7 +84,8 @@ else
   $emails.each_key do |key|
     if $emails[key] and $emails[key] != "" and $emails[key].include? "@"
       if comma
-        output.print ", " + $emails[key] 
+        output.print ", " + $emails[key] # Comma separated emails
+        #output.print "; " + $emails[key] # Semi-colon separated emails
       else
         comma = true
         output.print $emails[key]
