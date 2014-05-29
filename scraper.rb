@@ -76,10 +76,10 @@ if ARGV.length == 1 or ARGV[1].to_i == 0
     end
   end
 else
-  # Write all emails to a csv file
+  # Write all emails to a text file
   # Emails without an "@" symbol will error and print for manual entries
   # For example, github.at.github.com will need to be added manually
-  output = File.open(ARGV[0] + "_emails.csv", "w")
+  output = File.open(ARGV[0] + "_emails.txt", "w")
   comma = false
   $emails.each_key do |key|
     if $emails[key] and $emails[key] != "" and $emails[key].include? "@"
